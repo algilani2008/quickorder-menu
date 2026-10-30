@@ -63,9 +63,12 @@
           </div>
         </div>
       </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+      <button id="loyaltyBtn" onclick="openLoyalty()" class="hidden h-10 px-3 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-sm font-bold flex items-center gap-1 hover:bg-amber-100 transition" aria-label="نقاط الولاء">⭐ <span id="loyaltyBtnText">نقاطي</span></button>
       <a id="directWhatsAppBtn" href="#" target="_blank" rel="noopener" aria-label="تواصل معنا عبر واتساب" class="p-2 rounded-full bg-brand-50 text-brand-600 hover:bg-brand-100 transition flex-shrink-0">
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/></svg>
       </a>
+      </div>
     </div>
 
     <div class="max-w-md mx-auto px-4 pb-3">
@@ -224,6 +227,11 @@
               <input type="tel" id="customerPhone" placeholder="05xxxxxxxx" dir="ltr" inputmode="tel" autocomplete="tel" maxlength="20" class="w-full text-right bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
             </div>
 
+            <label class="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+              <input id="marketingConsent" type="checkbox" class="accent-brand-600 mt-0.5">
+              <span>📣 أبي توصلني العروض والخصومات على الواتساب</span>
+            </label>
+
             <div id="tableSection" class="hidden">
               <label for="tableNumber" class="block text-xs text-gray-600 mb-1">رقم الطاولة <span class="text-red-500">*</span></label>
               <input type="text" id="tableNumber" inputmode="numeric" placeholder="الرقم المكتوب على الطاولة" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
@@ -253,6 +261,8 @@
           </div>
 
           <div id="orderReview" class="bg-white rounded-2xl border border-gray-100 p-3 text-xs space-y-1"></div>
+
+          <div id="loyaltyCheckout" class="hidden bg-amber-50/60 rounded-2xl border border-amber-100 p-3 space-y-1"></div>
 
           <div class="bg-white rounded-2xl border border-gray-100 p-3 text-sm space-y-2" id="invoiceBox"></div>
 
@@ -286,8 +296,22 @@
     </div>
   </div>
 
+  <!-- ====================== نقاط الولاء ====================== -->
+  <div id="loyaltyModal" onclick="if(event.target===this) closeLoyalty()" class="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="sheet bg-gray-50 w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transform translate-y-full sm:translate-y-0 sheet-enter">
+      <div class="bg-white px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-bold text-gray-900">⭐ نقاط الولاء</h2>
+        <button onclick="closeLoyalty()" aria-label="إغلاق" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 text-sm">✕</button>
+      </div>
+      <div id="loyaltyBody" class="p-4 overflow-y-auto transition-opacity"></div>
+      <p class="px-4 pb-safe pt-2 text-[11px] text-gray-400 text-center"><span id="loyaltyRule"></span> • النقاط تنضاف بعد ما يأكد المحل طلبك</p>
+    </div>
+  </div>
+
   <div id="toast" role="status" class="fixed top-4 inset-x-0 mx-auto w-fit max-w-[90%] z-[70] bg-gray-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg opacity-0 -translate-y-4 pointer-events-none transition-all duration-300"></div>
 
+  <script src="backend-core.js"></script>
+  <script src="backend-client.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
