@@ -2,220 +2,292 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منيو وطلبات سريعة عبر الواتساب | QuickOrder</title>
-  <!-- خط تجوال العصري -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>مقهى ومخبز الأصالة | اطلب أونلاين</title>
+  <meta name="description" content="تصفح المنيو واطلب مباشرة — قهوة مختصة، مشروبات باردة، حلويات ومخبوزات طازجة. توصيل، استلام من الفرع، أو طلب من طاولتك.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- ✏️ معاينة الرابط عند مشاركته في الواتساب وتويتر (عدّلها لكل متجر) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ar_SA">
+  <meta property="og:title" content="مقهى ومخبز الأصالة | اطلب أونلاين">
+  <meta property="og:description" content="اختر طلبك من المنيو وادفع بالطريقة اللي تناسبك. توصيل أو استلام من الفرع.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&h=630&auto=format&fit=crop&q=80">
+  <meta property="og:url" content="https://algilani2008.github.io/quickorder-menu/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS للواجهة السريعة والأنيقة -->
+
+  <!-- بيانات المتجر (المنيو، الأسعار، الدفع، الألوان) -->
+  <script src="config.js"></script>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Tajawal', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#f0fdf4',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-            }
+    if (window.tailwind) {
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+            colors: { brand: STORE_CONFIG.theme.brand }
           }
         }
-      }
+      };
     }
   </script>
   <style>
     body { font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
-    /* إخفاء شريط التمرير الأفقي للأصناف */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .sheet-enter { transition: transform .3s ease, opacity .3s ease; }
+    .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .mysr-form { width: 100% !important; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 pb-28">
 
-  <!-- رأس الصفحة (Header) -->
+  <!-- ====================== الرأس ====================== -->
   <header class="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
     <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div id="storeLogo" class="w-12 h-12 rounded-full bg-brand-50 border border-brand-500/20 flex items-center justify-center text-2xl shadow-inner">
-          ☕
-        </div>
-        <div>
-          <h1 id="storeName" class="font-bold text-lg text-gray-900 leading-tight">مقهى الأصالة</h1>
+      <div class="flex items-center gap-3 min-w-0">
+        <div id="storeLogo" class="w-12 h-12 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-2xl shadow-inner flex-shrink-0">☕</div>
+        <div class="min-w-0">
+          <h1 id="storeName" class="font-bold text-lg text-gray-900 leading-tight truncate">مقهى ومخبز الأصالة</h1>
           <div class="flex items-center gap-2 text-xs text-gray-500">
-            <span class="inline-flex items-center gap-1 text-emerald-600 font-medium">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> متاح لاستقبال الطلبات
+            <span id="storeStatus" class="inline-flex items-center gap-1 font-medium">
+              <span class="w-2 h-2 rounded-full bg-gray-300"></span> ...
             </span>
-            <span>•</span>
-            <span id="deliveryTime">20 - 35 دقيقة</span>
+            <span id="deliveryTimeWrap" class="inline-flex items-center gap-2"><span>•</span><span id="deliveryTime"></span></span>
           </div>
         </div>
       </div>
-      <!-- زر مساعدة / تواصل مباشر -->
-      <a id="directWhatsAppBtn" href="#" target="_blank" class="p-2 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="تواصل معنا عبر واتساب">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/>
-        </svg>
+      <a id="directWhatsAppBtn" href="#" target="_blank" rel="noopener" aria-label="تواصل معنا عبر واتساب" class="p-2 rounded-full bg-brand-50 text-brand-600 hover:bg-brand-100 transition flex-shrink-0">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/></svg>
       </a>
     </div>
 
-    <!-- شريط البحث السريع -->
     <div class="max-w-md mx-auto px-4 pb-3">
       <div class="relative">
-        <input type="text" id="searchInput" placeholder="ابحث عن مشروب، حلى، أو وجبة..." class="w-full bg-gray-100 rounded-xl py-2 pr-10 pl-4 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition">
-        <span class="absolute right-3 top-2.5 text-gray-400">
-          🔍
-        </span>
+        <input type="search" id="searchInput" placeholder="ابحث في المنيو..." class="w-full bg-gray-100 rounded-xl py-2 pr-10 pl-4 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition">
+        <span class="absolute right-3 top-2 text-gray-400">🔍</span>
       </div>
     </div>
 
-    <!-- شريط التصنيفات (Categories Filter) -->
-    <div class="max-w-md mx-auto px-4 pb-2 overflow-x-auto no-scrollbar flex items-center gap-2" id="categoriesBar">
-      <!-- يتم توليد الأزرار ديناميكياً -->
-    </div>
+    <div class="max-w-md mx-auto px-4 pb-2.5 overflow-x-auto no-scrollbar flex items-center gap-2" id="categoriesBar"></div>
   </header>
 
-  <!-- المحتوى الرئيسي (قائمة المنتجات) -->
+  <!-- ====================== المحتوى ====================== -->
   <main class="max-w-md mx-auto px-4 pt-4">
-    <!-- قائمة المنتجات -->
-    <div id="productsGrid" class="space-y-3">
-      <!-- بطاقات المنتجات تظهر هنا تلقائياً -->
-    </div>
+    <div id="tableBanner" class="hidden mb-3 bg-brand-50 border border-brand-200 text-brand-800 text-xs font-bold rounded-xl px-3 py-2.5"></div>
+    <div id="closedBanner" class="hidden mb-3 bg-red-50 border border-red-100 text-red-700 text-xs font-bold rounded-xl px-3 py-2.5">🔒 <span id="closedBannerText"></span></div>
 
-    <!-- تنبيه عند عدم وجود نتائج -->
+    <!-- العروض -->
+    <section id="offersSection" class="hidden mb-4">
+      <div id="offersRow" class="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4"></div>
+    </section>
+
+    <p id="deliveryNote" class="hidden mb-3 text-[11px] text-gray-500 text-center"></p>
+
+    <div id="productsGrid" class="space-y-6"></div>
+
     <div id="noResults" class="hidden text-center py-12">
       <div class="text-4xl mb-2">🔍</div>
       <p class="text-gray-500 font-medium">لم نجد أي صنف مطابق لبحثك</p>
     </div>
   </main>
 
-  <!-- شريط السلة العائم أسفل الشاشة -->
+  <!-- ====================== التذييل ====================== -->
+  <footer class="max-w-md mx-auto px-4 pt-8 pb-4 text-xs text-gray-600 space-y-4">
+    <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3 shadow-sm">
+      <h2 id="footerStoreName" class="font-bold text-sm text-gray-900"></h2>
+      <div id="footerAddressRow" class="flex items-start justify-between gap-3">
+        <p>📍 <span id="footerAddress"></span></p>
+        <a id="footerMapLink" href="#" target="_blank" rel="noopener" class="flex-shrink-0 text-brand-700 font-bold hover:underline">الموقع على الخريطة</a>
+      </div>
+      <details class="group">
+        <summary class="cursor-pointer font-bold text-gray-700 list-none flex items-center justify-between">🕒 أوقات العمل <span class="text-gray-400 group-open:rotate-180 transition">⌄</span></summary>
+        <div id="hoursList" class="mt-2 space-y-1"></div>
+      </details>
+      <div id="paymentBadges" class="flex flex-wrap gap-1.5 pt-1"></div>
+      <div id="socialLinks" class="flex flex-wrap gap-2"></div>
+      <p id="vatFooter" class="hidden text-[11px] text-gray-400"></p>
+    </div>
+    <p class="text-center text-[11px] text-gray-400">جميع الأسعار بالريال السعودي <span id="vatIncludedNote">وشاملة ضريبة القيمة المضافة</span></p>
+  </footer>
+
+  <!-- ====================== شريط السلة العائم ====================== -->
   <div id="cartBar" class="fixed bottom-4 inset-x-0 z-40 max-w-md mx-auto px-4 transition-all duration-300 transform translate-y-28 opacity-0 pointer-events-none">
-    <button onclick="toggleCheckoutModal(true)" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white py-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between font-bold transition">
+    <button onclick="openCheckout()" class="w-full bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white py-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between font-bold transition">
       <div class="flex items-center gap-3">
-        <span class="bg-emerald-800 text-xs px-2.5 py-1 rounded-full text-emerald-100" id="cartBadgeCount">0</span>
-        <span>عرض السلة وإتمام الطلب</span>
+        <span class="bg-white/20 text-xs px-2.5 py-1 rounded-full" id="cartBadgeCount">0</span>
+        <span>عرض السلة</span>
       </div>
-      <div class="flex items-center gap-1 text-lg">
-        <span id="cartBarTotal">0</span>
-        <span class="text-xs font-normal">ر.س</span>
-      </div>
+      <div class="flex items-center gap-1 text-lg"><span id="cartBarTotal">0</span><span class="text-xs font-normal">ر.س</span></div>
     </button>
   </div>
 
-  <!-- نافذة تأكيد الطلب والسلة (Checkout Modal) -->
-  <div id="checkoutModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
-      
-      <!-- رأس النافذة -->
-      <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">🛒</span>
-          <h2 class="font-bold text-gray-900">سلة المشتريات وتأكيد الطلب</h2>
-        </div>
-        <button onclick="toggleCheckoutModal(false)" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-200 text-sm transition">
-          ✕
-        </div>
+  <!-- ====================== نافذة خيارات الصنف ====================== -->
+  <div id="optionsModal" onclick="if(event.target===this) closeOptions()" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="sheet bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl transform translate-y-full sm:translate-y-0 sheet-enter">
+      <div id="optionsHero" class="relative h-40 bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center text-6xl flex-shrink-0"></div>
+      <button onclick="closeOptions()" aria-label="إغلاق" class="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 shadow text-gray-600 text-sm z-10">✕</button>
+      <div class="p-4 pb-2 border-b border-gray-100">
+        <h2 id="optionsTitle" class="font-bold text-gray-900"></h2>
+        <p id="optionsDesc" class="text-xs text-gray-500 mt-1 leading-relaxed"></p>
+        <p id="optionsMeta" class="text-[11px] text-gray-400 mt-1"></p>
       </div>
-
-      <!-- محتوى السلة والنموذج -->
-      <div class="p-4 overflow-y-auto space-y-5">
-        <!-- قائمة أصناف السلة -->
-        <div>
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">الأصناف المختارة</h3>
-          <div id="cartItemsList" class="divide-y divide-gray-100 border border-gray-100 rounded-xl p-2 bg-gray-50/50">
-            <!-- عناصر السلة -->
-          </div>
+      <div id="optionsBody" class="p-4 overflow-y-auto space-y-4"></div>
+      <div class="p-4 border-t border-gray-100 flex items-center gap-3 pb-safe">
+        <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-xl">
+          <button onclick="changeOptionsQty(-1)" aria-label="إنقاص" class="w-9 h-9 rounded-lg bg-white text-gray-700 font-bold">-</button>
+          <span id="optionsQty" class="w-5 text-center font-bold text-sm">1</span>
+          <button onclick="changeOptionsQty(1)" aria-label="زيادة" class="w-9 h-9 rounded-lg bg-brand-600 text-white font-bold">+</button>
         </div>
-
-        <!-- نوع الاستلام -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 mb-2">طريقة الاستلام</label>
-          <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
-            <button type="button" id="deliveryBtn" onclick="setOrderType('delivery')" class="py-2 text-sm font-bold rounded-lg bg-white text-emerald-700 shadow-sm transition">
-              🛵 توصيل للعنوان
-            </button>
-            <button type="button" id="pickupBtn" onclick="setOrderType('pickup')" class="py-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-white/50 transition">
-              🏪 استلام من الفرع
-            </button>
-          </div>
-        </div>
-
-        <!-- بيانات العميل -->
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">الاسم الكريم <span class="text-red-500">*</span></label>
-            <input type="text" id="customerName" placeholder="مثال: محمد العمري" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">رقم الجوال <span class="text-red-500">*</span></label>
-            <input type="tel" id="customerPhone" placeholder="05xxxxxxxx" dir="ltr" class="w-full text-right bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-          </div>
-
-          <!-- حقل العنوان (يظهر فقط في حالة التوصيل) -->
-          <div id="addressSection">
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs font-bold text-gray-700">عنوان التوصيل <span class="text-red-500">*</span></label>
-              <button type="button" onclick="detectLocation()" class="text-xs text-emerald-600 hover:underline flex items-center gap-1 font-medium">
-                📍 مشاركة موقعي الحالي
-              </button>
-            </div>
-            <textarea id="customerAddress" rows="2" placeholder="الحي، اسم الشارع، رقم العمارة أو رابط خرائط قوقل..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
-          </div>
-
-          <!-- ملاحظات إضافية -->
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">ملاحظات خاصة على الطلب (اختياري)</label>
-            <input type="text" id="customerNotes" placeholder="مثال: بدون سكر، صوص إضافي على جنب..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-          </div>
-
-          <!-- طريقة الدفع المفضلة -->
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">طريقة الدفع عند الاستلام</label>
-            <select id="paymentMethod" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-              <option value="بطاقة مدى / أبل باي عند الاستلام">💳 بطاقة مدى / Apple Pay عند الاستلام</option>
-              <option value="نقداً (كاش) عند الاستلام">💵 نقداً (كاش) عند الاستلام</option>
-              <option value="تحويل بنكي فوري">🏦 تحويل بنكي فوري</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- تفاصيل الحساب والإجمالي -->
-        <div class="bg-gray-50 p-3 rounded-xl space-y-1.5 text-xs text-gray-600">
-          <div class="flex justify-between">
-            <span>مجموع الأصناف:</span>
-            <span class="font-bold text-gray-800"><span id="summarySubtotal">0</span> ر.س</span>
-          </div>
-          <div class="flex justify-between" id="summaryDeliveryRow">
-            <span>رسوم التوصيل:</span>
-            <span class="font-bold text-gray-800"><span id="summaryDelivery">0</span> ر.س</span>
-          </div>
-          <div class="border-t border-gray-200 pt-2 flex justify-between text-sm font-extrabold text-emerald-800">
-            <span>المبلغ الإجمالي:</span>
-            <span><span id="summaryTotal">0</span> ر.س</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- زر الإرسال عبر الواتساب -->
-      <div class="p-4 border-t border-gray-100 bg-white">
-        <button onclick="submitOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-base transition">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/>
-          </svg>
-          <span>إرسال الطلب عبر الواتساب</span>
+        <button onclick="confirmOptions()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-between px-4 transition active:scale-[0.99]">
+          <span>إضافة للسلة</span><span id="optionsTotal"></span>
         </button>
       </div>
-
     </div>
   </div>
 
-  <!-- ملف المنطق البرمجي والبيانات -->
+  <!-- ====================== شاشة إتمام الطلب (خطوات) ====================== -->
+  <div id="checkoutModal" onclick="if(event.target===this) closeCheckout()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="sheet bg-gray-50 w-full max-w-md rounded-t-3xl sm:rounded-2xl h-[94vh] sm:h-[88vh] flex flex-col overflow-hidden shadow-2xl transform translate-y-full sm:translate-y-0 sheet-enter">
+
+      <!-- رأس + مؤشر الخطوات -->
+      <div id="checkoutHeader" class="bg-white px-4 pt-4 pb-3 border-b border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+          <button id="backBtn" onclick="prevStep()" aria-label="رجوع" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 invisible">→</button>
+          <h2 id="stepTitle" class="font-bold text-gray-900">سلة الطلب</h2>
+          <button onclick="closeCheckout()" aria-label="إغلاق" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 text-sm">✕</button>
+        </div>
+        <ol id="stepper" class="grid grid-cols-3 gap-2 text-[11px] font-bold"></ol>
+      </div>
+
+      <div id="checkoutBody" class="flex-1 overflow-y-auto">
+
+        <!-- الخطوة 1: السلة -->
+        <section data-step="1" class="p-4 space-y-4">
+          <div id="cartItemsList" class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100"></div>
+          <p id="cartHint" class="hidden"></p>
+
+          <div id="upsellSection" class="hidden">
+            <h3 class="text-xs font-bold text-gray-500 mb-2">يكمّل طلبك 😋</h3>
+            <div id="upsellRow" class="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4"></div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-100 p-3">
+            <label for="couponInput" class="block text-xs font-bold text-gray-700 mb-2">🎟️ عندك كود خصم؟</label>
+            <div class="flex gap-2">
+              <input id="couponInput" type="text" placeholder="اكتب الكود" autocomplete="off" class="flex-1 min-w-0 uppercase bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+              <button id="couponBtn" onclick="applyCoupon()" class="px-4 rounded-xl bg-gray-900 text-white text-sm font-bold">تطبيق</button>
+            </div>
+            <p id="couponMsg" class="hidden text-xs mt-2 font-bold"></p>
+          </div>
+        </section>
+
+        <!-- الخطوة 2: الاستلام والبيانات -->
+        <section data-step="2" class="hidden p-4 space-y-4">
+          <div class="bg-white rounded-2xl border border-gray-100 p-3">
+            <h3 class="text-xs font-bold text-gray-700 mb-2">طريقة الاستلام</h3>
+            <div id="orderTypeTabs" class="grid gap-2 bg-gray-100 p-1 rounded-xl"></div>
+            <div id="pickupInfo" class="hidden mt-3 bg-brand-50 text-brand-800 text-xs rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+              <span>🏪 <span id="pickupAddress"></span></span>
+              <a id="pickupMapLink" href="#" target="_blank" rel="noopener" class="font-bold underline flex-shrink-0">الخريطة</a>
+            </div>
+          </div>
+
+          <div id="timingCard" class="bg-white rounded-2xl border border-gray-100 p-3">
+            <h3 class="text-xs font-bold text-gray-700 mb-2">وقت الطلب</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <label id="asapOption" class="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                <input type="radio" name="timing" value="asap" checked onchange="onTimingChange()" class="accent-brand-600"> <span>⚡ بأسرع وقت</span>
+              </label>
+              <label id="scheduleOption" class="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                <input type="radio" name="timing" value="schedule" onchange="onTimingChange()" class="accent-brand-600"> <span>📅 جدولة</span>
+              </label>
+            </div>
+            <select id="scheduleSelect" class="hidden mt-2 w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></select>
+            <p id="timingNote" class="text-[11px] text-gray-400 mt-2"></p>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-100 p-3 space-y-3">
+            <h3 class="text-xs font-bold text-gray-700">بياناتك</h3>
+            <div>
+              <label for="customerName" class="block text-xs text-gray-600 mb-1">الاسم <span class="text-red-500">*</span></label>
+              <input type="text" id="customerName" placeholder="مثال: محمد العمري" autocomplete="name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <div>
+              <label for="customerPhone" class="block text-xs text-gray-600 mb-1">رقم الجوال <span class="text-red-500">*</span></label>
+              <input type="tel" id="customerPhone" placeholder="05xxxxxxxx" dir="ltr" inputmode="tel" autocomplete="tel" maxlength="20" class="w-full text-right bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+
+            <div id="tableSection" class="hidden">
+              <label for="tableNumber" class="block text-xs text-gray-600 mb-1">رقم الطاولة <span class="text-red-500">*</span></label>
+              <input type="text" id="tableNumber" inputmode="numeric" placeholder="الرقم المكتوب على الطاولة" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+
+            <div id="addressSection">
+              <div class="flex items-center justify-between mb-1">
+                <label for="customerAddress" class="text-xs text-gray-600">عنوان التوصيل <span class="text-red-500">*</span></label>
+                <button type="button" onclick="detectLocation(this)" class="text-xs text-brand-700 hover:underline font-bold">📍 حدد موقعي</button>
+              </div>
+              <textarea id="customerAddress" rows="2" placeholder="الحي، الشارع، رقم المبنى، أو رابط خرائط قوقل" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+            </div>
+
+            <div>
+              <label for="customerNotes" class="block text-xs text-gray-600 mb-1">ملاحظات (اختياري)</label>
+              <input type="text" id="customerNotes" placeholder="مثال: بدون بصل، الدور الثاني، اتصل قبل الوصول" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+          </div>
+        </section>
+
+        <!-- الخطوة 3: الدفع والمراجعة -->
+        <section data-step="3" class="hidden p-4 space-y-4">
+          <div class="bg-white rounded-2xl border border-gray-100 p-3">
+            <h3 class="text-xs font-bold text-gray-700 mb-2">طريقة الدفع</h3>
+            <div id="paymentMethodsList" class="space-y-2"></div>
+            <div id="paymentExtra" class="mt-3"></div>
+          </div>
+
+          <div id="orderReview" class="bg-white rounded-2xl border border-gray-100 p-3 text-xs space-y-1"></div>
+
+          <div class="bg-white rounded-2xl border border-gray-100 p-3 text-sm space-y-2" id="invoiceBox"></div>
+
+          <!-- نموذج الدفع الإلكتروني (ميسّر) -->
+          <div id="onlinePaySection" class="hidden bg-white rounded-2xl border border-gray-100 p-3">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-bold text-gray-700">🔒 الدفع الآمن</h3>
+              <button onclick="cancelOnlinePayment()" class="text-xs text-gray-500 underline">تغيير طريقة الدفع</button>
+            </div>
+            <div class="mysr-form"></div>
+            <p class="text-[11px] text-gray-400 mt-2 text-center">الدفع يتم عبر بوابة ميسّر المرخصة من البنك المركزي السعودي، ولا نحتفظ ببيانات بطاقتك.</p>
+          </div>
+        </section>
+
+        <!-- الخطوة 4: تأكيد الطلب -->
+        <section data-step="4" class="hidden p-4">
+          <div id="successBox" class="text-center pt-4"></div>
+        </section>
+      </div>
+
+      <!-- شريط الإجراء السفلي -->
+      <div id="checkoutFooter" class="bg-white border-t border-gray-100 px-4 pt-3 pb-safe">
+        <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+          <span id="footerTotalLabel">الإجمالي</span>
+          <span class="font-extrabold text-base text-gray-900" id="footerTotal">0 ر.س</span>
+        </div>
+        <button id="primaryBtn" onclick="nextStep()" class="w-full bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 active:scale-[0.99] text-white py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-base transition">
+          متابعة
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" class="fixed top-4 inset-x-0 mx-auto w-fit max-w-[90%] z-[70] bg-gray-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg opacity-0 -translate-y-4 pointer-events-none transition-all duration-300"></div>
+
   <script src="app.js"></script>
 </body>
 </html>
