@@ -19,6 +19,7 @@ const state = {
   lastOrder: null,         // آخر طلب تم تأكيده (لشاشة النجاح)
 };
 let optionsProduct = null;
+const loyalty = { phone: "", data: null }; // بيانات نقاط العميل الحالي
 
 const KEY = (name) => `qo_${name}_${C.storeId || C.whatsappNumber}`; // storeId يفصل بيانات كل متجر على نفس الدومين
 const $ = (id) => document.getElementById(id);
@@ -69,7 +70,7 @@ function closeSheet(id) {
   const m = $(id);
   m.classList.add("opacity-0", "pointer-events-none");
   m.querySelector(".sheet").classList.add("translate-y-full");
-  if ($("optionsModal").classList.contains("opacity-0") && $("checkoutModal").classList.contains("opacity-0")) {
+  if (["optionsModal", "checkoutModal", "loyaltyModal"].every(x => $(x).classList.contains("opacity-0"))) {
     document.body.style.overflow = "";
   }
 }
@@ -188,6 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(location.search);
   state.table = (params.get("table") || "").trim();
 
+  applyOverrides(store("get", KEY("menu")) || []);
   loadCart();
   initStoreInfo();
   renderCategories();
@@ -196,6 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
   updateCartUI();
   updateStoreStatus();
   setInterval(updateStoreStatus, 60 * 1000);
+  refreshMenuFromServer();
+  initLoyalty();
 
   $("searchInput").addEventListener("input", (e) => {
     state.search = e.target.value.trim().toLowerCase();
@@ -209,7 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (optionsProduct) closeOptions();
+  if (!$("loyaltyModal").classList.contains("opacity-0")) closeLoyalty();
+  else if (optionsProduct) closeOptions();
   else if (state.step !== 4) closeCheckout();
 });
 
@@ -505,15 +510,22 @@ function onCartChanged() {
 function loadCart() {
   const saved = store("get", KEY("cart"));
   if (!Array.isArray(saved)) return;
-  state.cart = saved.filter(l => {
+  state.cart = saved.filter(l => !l.reward && l.qty > 0);
+  repriceCart();
+}
+
+// تحديث أسعار السلة حسب المنيو الحالي، وحذف الأصناف غير المتوفرة
+function repriceCart() {
+  state.cart = state.cart.filter(l => {
     const p = findProduct(l.productId);
-    if (!p || p.available === false || !(l.qty > 0)) return false;
+    if (!p || p.available === false) return false;
+    if (l.reward) return true;
     let extra = 0;
     (p.options || []).forEach(gKey => {
       const g = C.optionGroups[gKey];
       (g ? g.choices : []).forEach(c => { if (l.options.includes(c.label)) extra += c.price; });
     });
-    l.unitPrice = p.price + extra; // تحديث السعر حسب المنيو الحالي
+    l.unitPrice = p.price + extra;
     return true;
   });
 }
@@ -698,13 +710,14 @@ function renderCartStep() {
           <div class="flex-1 min-w-0">
             <h4 class="font-bold text-gray-800 text-sm truncate">${escapeHTML(p.name)}</h4>
             ${l.options.length ? `<p class="text-[11px] text-gray-500 leading-snug">${escapeHTML(l.options.join("، "))}</p>` : ""}
-            <p class="text-xs font-bold text-brand-700 mt-0.5">${money(l.unitPrice * l.qty)}</p>
+            <p class="text-xs font-bold text-brand-700 mt-0.5">${l.reward ? `🎁 مجاناً — ${l.rewardCost} نقطة` : money(l.unitPrice * l.qty)}</p>
           </div>
+          ${l.reward ? `<button onclick="removeReward()" class="text-xs font-bold text-gray-500 bg-gray-100 rounded-xl px-3 py-2 flex-shrink-0">إلغاء</button>` : `
           <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl flex-shrink-0">
             <button onclick="updateLineQty(${i}, -1)" aria-label="إنقاص" class="w-7 h-7 rounded-lg bg-white text-gray-600 font-bold text-sm">${l.qty === 1 ? "🗑" : "-"}</button>
             <span class="font-bold text-xs w-4 text-center">${l.qty}</span>
             <button onclick="updateLineQty(${i}, 1)" aria-label="زيادة" class="w-7 h-7 rounded-lg bg-brand-600 text-white font-bold text-sm">+</button>
-          </div>
+          </div>`}
         </div>`;
     }).join("");
   }
@@ -829,6 +842,8 @@ function validateDetails() {
     return false;
   }
   if (t.scheduled && !t.iso) { showToast("لا توجد أوقات متاحة للجدولة حالياً"); return false; }
+  const phone = validatePhone($("customerPhone").value);
+  if (phone !== loyalty.phone) { loyalty.phone = phone; loyalty.data = null; }
   return true;
 }
 
@@ -908,6 +923,7 @@ function renderPaymentStep() {
   renderPaymentExtra();
   renderReview();
   renderInvoice();
+  renderLoyaltyCheckout();
   updatePrimaryButton();
 }
 
@@ -1009,14 +1025,18 @@ function buildOrder() {
     paymentStatus: state.payment === "online" ? "pending" : "unpaid",
     paymentId: "",
     coupon: state.coupon ? state.coupon.code : "",
-    lines: state.cart.map(l => ({ name: findProduct(l.productId).name, options: l.options, qty: l.qty, total: round2(l.unitPrice * l.qty) })),
+    marketing: $("marketingConsent") ? $("marketingConsent").checked : false,
+    reward: (() => { const r = state.cart.find(l => l.reward); return r ? { productId: r.productId, name: findProduct(r.productId).name, cost: r.rewardCost } : null; })(),
+    pointsBase: round2(t.sub - t.discount),
+    lines: state.cart.map(l => ({ name: findProduct(l.productId).name, options: l.options, qty: l.qty, total: round2(l.unitPrice * l.qty), reward: !!l.reward })),
     totals: t,
   };
 }
 
 function placeOrder() {
   const order = buildOrder();
-  store("set", KEY("customer"), { name: order.customer.name, phone: order.customer.phone, address: order.customer.address });
+  const prevCustomer = store("get", KEY("customer")) || {};
+  store("set", KEY("customer"), { ...prevCustomer, name: order.customer.name, phone: order.customer.phone, address: order.customer.address, marketing: prevCustomer.marketing || order.marketing });
 
   if (order.payment === "online") return startOnlinePayment(order);
 
@@ -1025,6 +1045,7 @@ function placeOrder() {
 }
 
 function finishOrder(order, openWhatsApp) {
+  recordOrder(order);
   state.lastOrder = order;
   store("set", KEY("lastOrder"), order);
   state.cart = [];
@@ -1062,8 +1083,8 @@ function orderMessage(o) {
   L.push("");
   L.push("📋 *الأصناف:*");
   o.lines.forEach(l => {
-    L.push(`▫️ *${l.name}* × ${l.qty} = ${money(l.total)}`);
-    if (l.options.length) L.push(`      ↳ ${l.options.join("، ")}`);
+    L.push(l.reward ? `🎁 *${l.name}* — مكافأة نقاط (مجاناً)` : `▫️ *${l.name}* × ${l.qty} = ${money(l.total)}`);
+    if (l.options.length && !l.reward) L.push(`      ↳ ${l.options.join("، ")}`);
   });
   L.push(sep);
   L.push(`المجموع: ${money(o.totals.sub)}`);
@@ -1072,12 +1093,15 @@ function orderMessage(o) {
   if (C.vat && C.vat.rate) L.push(`${C.vat.pricesIncludeVat ? "شامل الضريبة" : "الضريبة"} ${Math.round(C.vat.rate * 100)}%: ${money(o.totals.vat)}`);
   L.push(`💰 *الإجمالي: ${money(o.totals.total)}*`);
   L.push(`💳 *الدفع:* ${payText}`);
+  if (o.reward) L.push(`⭐ *استبدال نقاط:* ${o.reward.name} مقابل ${o.reward.cost} نقطة`);
+  if (loyaltyEnabled() && o.pointsBase > 0) L.push(`⭐ نقاط الطلب: ${pointsFor(o.pointsBase)} نقطة (تنضاف بعد التأكيد)`);
   L.push(sep);
   L.push("👤 *العميل:*");
   L.push(`الاسم: ${o.customer.name}`);
   L.push(`الجوال: ${o.customer.phone}`);
   if (o.orderType === "delivery") L.push(`العنوان: ${o.customer.address}`);
   if (o.customer.notes) L.push(`ملاحظات: ${o.customer.notes}`);
+  if (o.marketing) L.push("📣 يوافق على استلام العروض");
   L.push(sep);
   L.push("فضلاً أكدوا استلام الطلب 🙏");
   return L.join("\n");
@@ -1242,4 +1266,244 @@ function handlePaymentReturn(params) {
     openCheckout();
     goToStep(3);
   }
+}
+
+// ======================================================================
+// تعديلات الأصناف من لوحة التحكم (الصور، الأسعار، التوفر)
+// ======================================================================
+const ORIGINAL_PRODUCTS = {};
+
+function applyOverrides(list) {
+  (list || []).forEach(o => {
+    const p = findProduct(Number(o.id));
+    if (!p) return;
+    if (!ORIGINAL_PRODUCTS[p.id]) ORIGINAL_PRODUCTS[p.id] = { image: p.image, price: p.price, available: p.available };
+    const base = ORIGINAL_PRODUCTS[p.id];
+    p.image = o.image ? o.image : base.image;
+    p.price = o.price != null ? Number(o.price) : base.price;
+    p.available = o.available != null ? o.available : base.available;
+  });
+}
+
+function refreshMenuFromServer() {
+  if (!Backend.enabled()) return;
+  Backend.call("menu").then(res => {
+    if (!res || !res.ok) return;
+    const before = JSON.stringify(store("get", KEY("menu")) || []);
+    const after = JSON.stringify(res.products);
+    store("set", KEY("menu"), res.products);
+    if (before === after) return;
+    applyOverrides(res.products);
+    repriceCart();
+    store("set", KEY("cart"), state.cart);
+    renderProducts();
+    updateCartUI();
+  });
+}
+
+// ======================================================================
+// نقاط الولاء والتسجيل
+// ======================================================================
+function loyaltyEnabled() { return Boolean(C.loyalty && C.loyalty.enabled && Backend.enabled()); }
+function pointsFor(amount) { return Math.max(0, Math.floor(amount * ((C.loyalty && C.loyalty.pointsPerRiyal) || 0))); }
+function rewardsList() {
+  return ((C.loyalty && C.loyalty.rewards) || [])
+    .map(r => ({ ...r, product: findProduct(r.productId) }))
+    .filter(r => r.product)
+    .sort((a, b) => a.points - b.points);
+}
+
+function initLoyalty() {
+  const saved = store("get", KEY("customer")) || {};
+  if (saved.phone) loyalty.phone = saved.phone;
+  if ($("marketingConsent") && saved.marketing) $("marketingConsent").checked = true;
+  if (!loyaltyEnabled()) return;
+  $("loyaltyBtn").classList.remove("hidden");
+  $("loyaltyRule").textContent = `كل 1 ${C.currency} = ${C.loyalty.pointsPerRiyal} نقطة`;
+  if (loyalty.phone) fetchLoyalty().then(updateLoyaltyBadge);
+}
+
+function fetchLoyalty(phone = loyalty.phone) {
+  if (!loyaltyEnabled() || !phone) return Promise.resolve(null);
+  return Backend.call("lookup", { phone }).then(res => {
+    if (res && res.ok) { loyalty.phone = phone; loyalty.data = res; }
+    return res;
+  });
+}
+
+function updateLoyaltyBadge() {
+  const d = loyalty.data;
+  $("loyaltyBtnText").textContent = d && d.found ? `${d.available}` : "نقاطي";
+}
+
+function openLoyalty() {
+  renderLoyaltySheet();
+  openSheet("loyaltyModal");
+  if (loyalty.phone) fetchLoyalty().then(() => { renderLoyaltySheet(); updateLoyaltyBadge(); });
+}
+function closeLoyalty() { closeSheet("loyaltyModal"); }
+
+function renderLoyaltySheet() {
+  const body = $("loyaltyBody");
+  const d = loyalty.data;
+  const rewards = rewardsList();
+  const rewardsHtml = (available) => rewards.map(r => {
+    const pct = Math.min(100, Math.round((available || 0) / r.points * 100));
+    const ready = (available || 0) >= r.points;
+    return `
+      <div class="flex items-center gap-3 bg-white border ${ready ? "border-brand-500" : "border-gray-100"} rounded-2xl p-2.5">
+        ${productVisual(r.product, "w-12 h-12", "text-2xl")}
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-bold text-gray-800 truncate">${escapeHTML(r.product.name)}</p>
+          <p class="text-[11px] text-gray-500">${r.points} نقطة</p>
+          ${available != null ? `<span class="block h-1.5 bg-gray-100 rounded-full mt-1 overflow-hidden"><span class="block h-full ${ready ? "bg-emerald-500" : "bg-brand-500"} rounded-full" style="width:${pct}%"></span></span>` : ""}
+        </div>
+        ${ready ? `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1">✓ متاحة</span>` : ""}
+      </div>`;
+  }).join("");
+
+  if (d && d.found) {
+    body.innerHTML = `
+      <div class="text-center bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-5">
+        <p class="text-sm opacity-90">أهلاً ${escapeHTML(d.firstName || "")} 👋</p>
+        <p class="text-5xl font-extrabold mt-2">${d.available}</p>
+        <p class="text-xs opacity-90 mt-1">نقطة متاحة</p>
+        ${d.pending > 0 ? `<p class="text-[11px] mt-2 bg-white/15 rounded-lg inline-block px-2 py-1">⏳ ${d.pending} نقطة بانتظار تأكيد طلباتك</p>` : ""}
+      </div>
+      <h3 class="text-xs font-bold text-gray-700 mt-4 mb-2">🎁 المكافآت — استبدلها من السلة وقت الطلب</h3>
+      <div class="space-y-2">${rewardsHtml(d.available)}</div>
+      <div class="flex items-center justify-between mt-4 text-xs text-gray-500">
+        <span dir="ltr">${escapeHTML(loyalty.phone)}</span>
+        <button onclick="loyalty.data=null; loyalty.phone=''; renderLoyaltySheet()" class="font-bold text-brand-700">تغيير الرقم</button>
+      </div>`;
+    return;
+  }
+
+  const showRegister = d && !d.found;
+  body.innerHTML = `
+    <div class="bg-brand-50 rounded-2xl p-4 text-sm text-brand-900">
+      <p class="font-extrabold text-base">⭐ اجمع نقاط مع كل طلب</p>
+      <p class="text-xs mt-1">سجّل برقم جوالك، وكل طلب مؤكد يضيف لك نقاط تستبدلها بأصناف مجانية.</p>
+    </div>
+    <div class="space-y-3 mt-4">
+      <div>
+        <label for="loyaltyPhone" class="block text-xs text-gray-600 mb-1">رقم الجوال</label>
+        <input id="loyaltyPhone" type="tel" inputmode="tel" dir="ltr" maxlength="20" placeholder="05xxxxxxxx" value="${escapeHTML(loyalty.phone || $("customerPhone").value)}" class="w-full text-right bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      ${showRegister ? `
+        <p class="text-xs font-bold text-amber-700 bg-amber-50 rounded-lg px-3 py-2">الرقم غير مسجّل — أكمل التسجيل وابدأ تجمع نقاط</p>
+        <div>
+          <label for="loyaltyName" class="block text-xs text-gray-600 mb-1">الاسم</label>
+          <input id="loyaltyName" type="text" autocomplete="name" value="${escapeHTML($("customerName").value)}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <label class="flex items-start gap-2 text-xs text-gray-600">
+          <input id="loyaltyConsent" type="checkbox" class="accent-brand-600 mt-0.5">
+          <span>أوافق على استلام العروض والخصومات من ${escapeHTML(C.storeName)} على الواتساب</span>
+        </label>
+        <button onclick="registerLoyalty()" class="w-full bg-brand-600 text-white rounded-xl py-3 font-bold">سجّل وابدأ تجمع نقاط</button>
+      ` : `<button onclick="lookupLoyalty()" class="w-full bg-brand-600 text-white rounded-xl py-3 font-bold">عرض رصيدي</button>`}
+    </div>
+    <h3 class="text-xs font-bold text-gray-700 mt-5 mb-2">🎁 المكافآت</h3>
+    <div class="space-y-2">${rewardsHtml(null)}</div>`;
+}
+
+function lookupLoyalty() {
+  const phone = validatePhone($("loyaltyPhone").value);
+  if (!phone) return fieldError("loyaltyPhone", "رقم الجوال غير صحيح");
+  $("loyaltyBody").style.opacity = ".6";
+  fetchLoyalty(phone).then(res => {
+    $("loyaltyBody").style.opacity = "";
+    if (!res || !res.ok) { showToast((res && res.error) || "تعذر جلب الرصيد"); return; }
+    if (!res.found) loyalty.data = { found: false };
+    renderLoyaltySheet();
+    updateLoyaltyBadge();
+  });
+}
+
+function registerLoyalty() {
+  const phone = validatePhone($("loyaltyPhone").value);
+  const name = $("loyaltyName").value.trim();
+  if (!phone) return fieldError("loyaltyPhone", "رقم الجوال غير صحيح");
+  if (!name) return fieldError("loyaltyName", "فضلاً اكتب اسمك");
+  const marketing = $("loyaltyConsent").checked;
+  Backend.call("register", { phone, name, marketing }).then(res => {
+    if (!res || !res.ok) { showToast((res && res.error) || "تعذر التسجيل"); return; }
+    const saved = store("get", KEY("customer")) || {};
+    store("set", KEY("customer"), { ...saved, name, phone, marketing });
+    $("customerName").value = name;
+    $("customerPhone").value = phone;
+    if ($("marketingConsent")) $("marketingConsent").checked = marketing;
+    showToast("تم التسجيل ✓ نقاطك تنضاف مع كل طلب");
+    fetchLoyalty(phone).then(() => { renderLoyaltySheet(); updateLoyaltyBadge(); });
+  });
+}
+
+// ---------- النقاط داخل شاشة الدفع ----------
+function renderLoyaltyCheckout() {
+  const box = $("loyaltyCheckout");
+  if (!loyaltyEnabled()) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  const t = totals();
+  const earn = pointsFor(t.sub - t.discount);
+  const earnLine = `<p class="text-xs text-gray-600">⭐ بتكسب <b class="text-brand-700">${earn} نقطة</b> من هذا الطلب بعد تأكيده</p>`;
+  const d = loyalty.data;
+
+  if (!d) {
+    box.innerHTML = `${earnLine}<p class="text-[11px] text-gray-400 mt-1">جاري جلب رصيدك...</p>`;
+    fetchLoyalty().then(() => { if (state.step === 3) renderLoyaltyCheckout(); updateLoyaltyBadge(); });
+    return;
+  }
+  if (!d.found) {
+    box.innerHTML = `${earnLine}<p class="text-[11px] text-gray-500 mt-1">رقمك بيتسجل تلقائياً مع الطلب وتبدأ تجمع نقاط.</p>`;
+    return;
+  }
+  const inCart = state.cart.find(l => l.reward);
+  const rewards = rewardsList();
+  box.innerHTML = `
+    <div class="flex items-center justify-between">
+      <h3 class="text-xs font-bold text-gray-700">⭐ رصيدك: <span class="text-brand-700">${d.available} نقطة</span></h3>
+      ${d.pending > 0 ? `<span class="text-[10px] text-gray-400">+${d.pending} بانتظار التأكيد</span>` : ""}
+    </div>
+    ${earnLine}
+    ${inCart ? `<p class="text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mt-2">🎁 مستخدمة: ${escapeHTML(findProduct(inCart.productId).name)} (${inCart.rewardCost} نقطة) <button onclick="removeReward()" class="underline mr-1 text-gray-500">إلغاء</button></p>` : `
+      <div class="flex gap-2 overflow-x-auto no-scrollbar mt-2 -mx-1 px-1">
+        ${rewards.map(r => {
+          const ok = d.available >= r.points;
+          return `<button ${ok ? `onclick="addReward(${r.productId})"` : "disabled"} class="flex-shrink-0 text-right rounded-xl border px-3 py-2 ${ok ? "border-brand-500 bg-brand-50" : "border-gray-100 opacity-50"}">
+            <span class="block text-xs font-bold text-gray-800">🎁 ${escapeHTML(r.product.name)}</span>
+            <span class="block text-[11px] ${ok ? "text-brand-700 font-bold" : "text-gray-400"}">${ok ? "استبدل" : "تحتاج"} ${r.points} نقطة</span>
+          </button>`;
+        }).join("")}
+      </div>`}`;
+}
+
+function addReward(productId) {
+  const r = rewardsList().find(x => x.productId === productId);
+  if (!r || !loyalty.data || loyalty.data.available < r.points) return;
+  if (state.cart.some(l => l.reward)) { showToast("تقدر تستخدم مكافأة وحدة في كل طلب"); return; }
+  state.cart.push({ productId, options: ["🎁 مكافأة نقاط"], unitPrice: 0, qty: 1, reward: true, rewardCost: r.points });
+  showToast(`🎁 أُضيف ${r.product.name} مجاناً`);
+  onCartChanged();
+}
+
+function removeReward() {
+  state.cart = state.cart.filter(l => !l.reward);
+  onCartChanged();
+}
+
+// ---------- تسجيل الطلب في Google Sheets ----------
+function recordOrder(o) {
+  if (!Backend.enabled()) return;
+  const items = o.lines.map(l => `${l.reward ? "🎁 " : ""}${l.name} × ${l.qty}${l.options.length ? " (" + l.options.join("، ") + ")" : ""}${l.reward ? " — مكافأة" : " = " + fmt(l.total)}`).join("\n");
+  Backend.send("order", {
+    id: o.id, phone: o.customer.phone, name: o.customer.name, type: o.orderType,
+    total: o.totals.total, pointsBase: o.pointsBase, estPoints: loyaltyEnabled() ? pointsFor(o.pointsBase) : 0,
+    payment: ((PAYMENT_DEFS[o.payment] || {}).short || o.payment) + (o.paymentStatus === "paid" ? " ✅ مدفوع" : ""), paymentId: o.paymentId || "",
+    items, marketing: o.marketing,
+    rewardId: o.reward ? o.reward.productId : "", rewardName: o.reward ? o.reward.name : "", rewardCost: o.reward ? o.reward.cost : 0,
+  });
+  const saved = store("get", KEY("customer")) || {};
+  store("set", KEY("customer"), { ...saved, marketing: saved.marketing || o.marketing });
+  loyalty.data = null; // يتحدث الرصيد في المرة القادمة
+  setTimeout(() => fetchLoyalty().then(updateLoyaltyBadge), 1500);
 }

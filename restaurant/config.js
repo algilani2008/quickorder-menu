@@ -56,6 +56,28 @@ const STORE_CONFIG = {
     payAtCounter: true,
   },
 
+  // ---------------- الخادم: العملاء والطلبات والنقاط والصور ----------------
+  // url: رابط Google Apps Script (Web app) — طريقة الإعداد في README
+  // بدون رابط ومع demo: true تشتغل كل الميزات تجريبياً داخل المتصفح (للعرض على العملاء)
+  backend: {
+    url: "",
+    demo: true,
+    demoPassword: "1234", // كلمة مرور لوحة التحكم في الوضع التجريبي فقط
+  },
+
+  // ---------------- نقاط الولاء ----------------
+  loyalty: {
+    enabled: true,
+    pointsPerRiyal: 1, // كل ريال = نقطة (بعد الخصم وبدون التوصيل)
+    rewards: [
+      { productId: 37, points: 40 },   // لبن
+      { productId: 34, points: 150 },  // لقيمات
+      { productId: 33, points: 220 },  // كنافة بالقشطة
+      { productId: 2, points: 350 },   // مندي دجاج
+      { productId: 1, points: 650 },   // مندي لحم
+    ],
+  },
+
   // ---------------- الكوبونات ----------------
   coupons: [
     { code: "AHLAN", type: "percent", value: 10, maxDiscount: 30, label: "خصم 10% — أهلاً فيك" },

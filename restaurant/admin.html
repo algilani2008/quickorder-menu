@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>لوحة التحكم</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      tailwind.config = { theme: { extend: { fontFamily: { sans: ['Tajawal', 'sans-serif'] }, colors: { brand: STORE_CONFIG.theme.brand } } } };
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+  <!-- تسجيل الدخول -->
+  <section id="loginView" class="max-w-sm mx-auto px-4 pt-20">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
+      <div id="loginLogo" class="w-16 h-16 mx-auto rounded-full bg-brand-50 flex items-center justify-center text-3xl"></div>
+      <h1 class="font-extrabold text-lg mt-3">لوحة التحكم</h1>
+      <p id="loginStore" class="text-xs text-gray-500 mt-1"></p>
+      <input id="passwordInput" type="password" autocomplete="current-password" placeholder="كلمة المرور" class="mt-5 w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+      <button id="loginBtn" onclick="login()" class="mt-3 w-full bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-3 font-bold">دخول</button>
+      <p id="loginError" class="hidden mt-3 text-xs font-bold text-red-600"></p>
+      <p id="demoNote" class="hidden mt-4 text-[11px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2"></p>
+    </div>
+  </section>
+
+  <!-- اللوحة -->
+  <section id="appView" class="hidden">
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-20">
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="headerLogo" class="text-2xl"></span>
+          <div class="min-w-0">
+            <h1 id="headerStore" class="font-bold text-sm truncate"></h1>
+            <p id="modeBadge" class="text-[11px]"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="./" target="_blank" class="text-xs font-bold text-brand-700 bg-brand-50 rounded-lg px-3 py-2">المنيو ↗</a>
+          <button onclick="logout()" class="text-xs font-bold text-gray-500 bg-gray-100 rounded-lg px-3 py-2">خروج</button>
+        </div>
+      </div>
+      <nav class="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto no-scrollbar" id="tabs">
+        <button data-tab="orders" class="tab px-4 py-2.5 text-sm font-bold border-b-2">📦 الطلبات <span id="newCount" class="hidden bg-red-500 text-white text-[10px] rounded-full px-1.5 mr-1"></span></button>
+        <button data-tab="products" class="tab px-4 py-2.5 text-sm font-bold border-b-2">🖼️ الأصناف والصور</button>
+        <button data-tab="customers" class="tab px-4 py-2.5 text-sm font-bold border-b-2">👥 العملاء والعروض</button>
+      </nav>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-4">
+      <!-- الطلبات -->
+      <div data-panel="orders" class="space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex gap-1 bg-gray-100 p-1 rounded-xl text-xs font-bold" id="orderFilter">
+            <button data-f="جديد" class="px-3 py-1.5 rounded-lg">جديد</button>
+            <button data-f="مؤكد" class="px-3 py-1.5 rounded-lg">مؤكد</button>
+            <button data-f="" class="px-3 py-1.5 rounded-lg">الكل</button>
+          </div>
+          <button onclick="loadOrders()" class="text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2">🔄 تحديث</button>
+        </div>
+        <p class="text-[11px] text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-2">💡 أكّد الطلب بعد ما يوصلك على الواتساب وتتأكد أن رقم المرسل نفس رقم الطلب — النقاط تنضاف للعميل عند التأكيد.</p>
+        <div id="ordersList" class="space-y-3"></div>
+      </div>
+
+      <!-- الأصناف -->
+      <div data-panel="products" class="hidden space-y-3">
+        <div class="flex items-center gap-2">
+          <input id="productSearch" type="search" placeholder="ابحث عن صنف..." class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <p class="text-[11px] text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-2">📷 صوّر الطبق من جوالك أو اختر صورة — تتصغّر تلقائياً وتظهر في المنيو خلال ثواني. تقدر تعدل السعر أو توقف الصنف مؤقتاً.</p>
+        <div id="productsList" class="space-y-2"></div>
+      </div>
+
+      <!-- العملاء -->
+      <div data-panel="customers" class="hidden space-y-3">
+        <div class="grid grid-cols-3 gap-2" id="customerStats"></div>
+
+        <div class="bg-white border border-gray-100 rounded-2xl p-3 space-y-2">
+          <h2 class="text-sm font-bold">📣 إرسال عرض للعملاء الموافقين</h2>
+          <textarea id="offerText" rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+          <p class="text-[11px] text-gray-500">اكتب <b>{الاسم}</b> ويتبدل باسم كل عميل، و<b>{النقاط}</b> برصيده. اضغط «إرسال» جنب كل عميل يفتح الواتساب برسالته جاهزة.</p>
+          <p class="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5">⚖️ حسب نظام حماية البيانات الشخصية، العروض ترسل فقط لمن وافق عليها، ويحق للعميل طلب إيقافها.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input id="customerSearch" type="search" placeholder="ابحث بالاسم أو الجوال..." class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+          <label class="text-xs font-bold text-gray-600 flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-3 py-2"><input id="onlyConsent" type="checkbox" checked class="accent-brand-600"> الموافقين فقط</label>
+          <button onclick="exportCustomers()" class="text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-xl px-3 py-2">⬇️ CSV</button>
+        </div>
+        <div id="customersList" class="bg-white border border-gray-100 rounded-2xl divide-y divide-gray-100"></div>
+      </div>
+    </main>
+  </section>
+
+  <div id="toast" role="status" class="fixed top-4 inset-x-0 mx-auto w-fit max-w-[90%] z-50 bg-gray-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg opacity-0 -translate-y-4 pointer-events-none transition-all duration-300"></div>
+
+  <script src="backend-core.js"></script>
+  <script src="backend-client.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
