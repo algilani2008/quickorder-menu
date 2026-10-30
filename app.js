@@ -20,7 +20,7 @@ const state = {
 };
 let optionsProduct = null;
 
-const KEY = (name) => `qo_${name}_${C.whatsappNumber}`;
+const KEY = (name) => `qo_${name}_${C.storeId || C.whatsappNumber}`; // storeId يفصل بيانات كل متجر على نفس الدومين
 const $ = (id) => document.getElementById(id);
 const findProduct = (id) => C.products.find(p => p.id === id);
 
