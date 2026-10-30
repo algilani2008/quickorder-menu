@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منيو وطلبات سريعة عبر الواتساب | QuickOrder</title>
+  <!-- خط تجوال العصري -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS للواجهة السريعة والأنيقة -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Tajawal', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+    /* إخفاء شريط التمرير الأفقي للأصناف */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 pb-28">
+
+  <!-- رأس الصفحة (Header) -->
+  <header class="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="storeLogo" class="w-12 h-12 rounded-full bg-brand-50 border border-brand-500/20 flex items-center justify-center text-2xl shadow-inner">
+          ☕
+        </div>
+        <div>
+          <h1 id="storeName" class="font-bold text-lg text-gray-900 leading-tight">مقهى الأصالة</h1>
+          <div class="flex items-center gap-2 text-xs text-gray-500">
+            <span class="inline-flex items-center gap-1 text-emerald-600 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> متاح لاستقبال الطلبات
+            </span>
+            <span>•</span>
+            <span id="deliveryTime">20 - 35 دقيقة</span>
+          </div>
+        </div>
+      </div>
+      <!-- زر مساعدة / تواصل مباشر -->
+      <a id="directWhatsAppBtn" href="#" target="_blank" class="p-2 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="تواصل معنا عبر واتساب">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- شريط البحث السريع -->
+    <div class="max-w-md mx-auto px-4 pb-3">
+      <div class="relative">
+        <input type="text" id="searchInput" placeholder="ابحث عن مشروب، حلى، أو وجبة..." class="w-full bg-gray-100 rounded-xl py-2 pr-10 pl-4 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition">
+        <span class="absolute right-3 top-2.5 text-gray-400">
+          🔍
+        </span>
+      </div>
+    </div>
+
+    <!-- شريط التصنيفات (Categories Filter) -->
+    <div class="max-w-md mx-auto px-4 pb-2 overflow-x-auto no-scrollbar flex items-center gap-2" id="categoriesBar">
+      <!-- يتم توليد الأزرار ديناميكياً -->
+    </div>
+  </header>
+
+  <!-- المحتوى الرئيسي (قائمة المنتجات) -->
+  <main class="max-w-md mx-auto px-4 pt-4">
+    <!-- قائمة المنتجات -->
+    <div id="productsGrid" class="space-y-3">
+      <!-- بطاقات المنتجات تظهر هنا تلقائياً -->
+    </div>
+
+    <!-- تنبيه عند عدم وجود نتائج -->
+    <div id="noResults" class="hidden text-center py-12">
+      <div class="text-4xl mb-2">🔍</div>
+      <p class="text-gray-500 font-medium">لم نجد أي صنف مطابق لبحثك</p>
+    </div>
+  </main>
+
+  <!-- شريط السلة العائم أسفل الشاشة -->
+  <div id="cartBar" class="fixed bottom-4 inset-x-0 z-40 max-w-md mx-auto px-4 transition-all duration-300 transform translate-y-28 opacity-0 pointer-events-none">
+    <button onclick="toggleCheckoutModal(true)" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white py-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between font-bold transition">
+      <div class="flex items-center gap-3">
+        <span class="bg-emerald-800 text-xs px-2.5 py-1 rounded-full text-emerald-100" id="cartBadgeCount">0</span>
+        <span>عرض السلة وإتمام الطلب</span>
+      </div>
+      <div class="flex items-center gap-1 text-lg">
+        <span id="cartBarTotal">0</span>
+        <span class="text-xs font-normal">ر.س</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- نافذة تأكيد الطلب والسلة (Checkout Modal) -->
+  <div id="checkoutModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
+      
+      <!-- رأس النافذة -->
+      <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🛒</span>
+          <h2 class="font-bold text-gray-900">سلة المشتريات وتأكيد الطلب</h2>
+        </div>
+        <button onclick="toggleCheckoutModal(false)" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-200 text-sm transition">
+          ✕
+        </div>
+      </div>
+
+      <!-- محتوى السلة والنموذج -->
+      <div class="p-4 overflow-y-auto space-y-5">
+        <!-- قائمة أصناف السلة -->
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">الأصناف المختارة</h3>
+          <div id="cartItemsList" class="divide-y divide-gray-100 border border-gray-100 rounded-xl p-2 bg-gray-50/50">
+            <!-- عناصر السلة -->
+          </div>
+        </div>
+
+        <!-- نوع الاستلام -->
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-2">طريقة الاستلام</label>
+          <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
+            <button type="button" id="deliveryBtn" onclick="setOrderType('delivery')" class="py-2 text-sm font-bold rounded-lg bg-white text-emerald-700 shadow-sm transition">
+              🛵 توصيل للعنوان
+            </button>
+            <button type="button" id="pickupBtn" onclick="setOrderType('pickup')" class="py-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-white/50 transition">
+              🏪 استلام من الفرع
+            </button>
+          </div>
+        </div>
+
+        <!-- بيانات العميل -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">الاسم الكريم <span class="text-red-500">*</span></label>
+            <input type="text" id="customerName" placeholder="مثال: محمد العمري" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">رقم الجوال <span class="text-red-500">*</span></label>
+            <input type="tel" id="customerPhone" placeholder="05xxxxxxxx" dir="ltr" class="w-full text-right bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+          </div>
+
+          <!-- حقل العنوان (يظهر فقط في حالة التوصيل) -->
+          <div id="addressSection">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700">عنوان التوصيل <span class="text-red-500">*</span></label>
+              <button type="button" onclick="detectLocation()" class="text-xs text-emerald-600 hover:underline flex items-center gap-1 font-medium">
+                📍 مشاركة موقعي الحالي
+              </button>
+            </div>
+            <textarea id="customerAddress" rows="2" placeholder="الحي، اسم الشارع، رقم العمارة أو رابط خرائط قوقل..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+          </div>
+
+          <!-- ملاحظات إضافية -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">ملاحظات خاصة على الطلب (اختياري)</label>
+            <input type="text" id="customerNotes" placeholder="مثال: بدون سكر، صوص إضافي على جنب..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+          </div>
+
+          <!-- طريقة الدفع المفضلة -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">طريقة الدفع عند الاستلام</label>
+            <select id="paymentMethod" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+              <option value="بطاقة مدى / أبل باي عند الاستلام">💳 بطاقة مدى / Apple Pay عند الاستلام</option>
+              <option value="نقداً (كاش) عند الاستلام">💵 نقداً (كاش) عند الاستلام</option>
+              <option value="تحويل بنكي فوري">🏦 تحويل بنكي فوري</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- تفاصيل الحساب والإجمالي -->
+        <div class="bg-gray-50 p-3 rounded-xl space-y-1.5 text-xs text-gray-600">
+          <div class="flex justify-between">
+            <span>مجموع الأصناف:</span>
+            <span class="font-bold text-gray-800"><span id="summarySubtotal">0</span> ر.س</span>
+          </div>
+          <div class="flex justify-between" id="summaryDeliveryRow">
+            <span>رسوم التوصيل:</span>
+            <span class="font-bold text-gray-800"><span id="summaryDelivery">0</span> ر.س</span>
+          </div>
+          <div class="border-t border-gray-200 pt-2 flex justify-between text-sm font-extrabold text-emerald-800">
+            <span>المبلغ الإجمالي:</span>
+            <span><span id="summaryTotal">0</span> ر.س</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- زر الإرسال عبر الواتساب -->
+      <div class="p-4 border-t border-gray-100 bg-white">
+        <button onclick="submitOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-base transition">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.58 2.007.917 2.796.917 3.182 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.764-5.767-5.764zm0 10.428c-.768 0-1.637-.29-2.348-.713l-.168-.1-.995.261.266-.97-.11-.174c-.5-.794-.766-1.564-.766-2.966 0-2.43 1.979-4.409 4.409-4.409 2.43 0 4.408 1.979 4.408 4.409-.001 2.43-1.979 4.409-4.409 4.409zm6.758-10.428c-1.803-1.803-4.199-2.796-6.75-2.796-5.26 0-9.539 4.28-9.539 9.54 0 1.68.438 3.32 1.272 4.764l-1.35 4.933 5.048-1.324c1.391.758 2.957 1.159 4.569 1.159 5.26 0 9.539-4.28 9.539-9.54 0-2.551-.993-4.947-2.799-6.75z"/>
+          </svg>
+          <span>إرسال الطلب عبر الواتساب</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ملف المنطق البرمجي والبيانات -->
+  <script src="app.js"></script>
+</body>
+</html>
