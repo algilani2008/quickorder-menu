@@ -16,7 +16,7 @@
   .sc-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:12px}
   .sc-card h2{font-size:15px;font-weight:800;color:#111827;margin:0 0 10px}
   .sc-card p,.sc-card li{font-size:13px;color:#374151;line-height:1.8}
-  .sc-card ol{margin:0;padding-inline-start:18px}
+  .sc-card ol{margin:0;padding-inline-start:20px;list-style:decimal}.sc-card ol li{margin-bottom:4px}
   .sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .sc-grid div{background:#f9fafb;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#1f2937}
   .sc-by{font-size:12px;color:#6b7280;text-align:center;padding:4px 0 8px}
