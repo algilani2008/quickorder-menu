@@ -385,10 +385,10 @@ function renderProducts() {
     $("productsGrid").innerHTML = C.categories.map(cat => {
       const items = filtered.filter(p => p.category === cat.id);
       if (!items.length) return "";
-      return `<section><h2 class="font-extrabold text-gray-900 mb-2 text-base">${cat.icon ? cat.icon + " " : ""}${escapeHTML(cat.name)}</h2><div class="space-y-3">${items.map(productCard).join("")}</div></section>`;
+      return `<section><h2 class="font-extrabold text-gray-900 mb-2 text-base">${cat.icon ? cat.icon + " " : ""}${escapeHTML(cat.name)}</h2><div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">${items.map(productCard).join("")}</div></section>`;
     }).join("");
   } else {
-    $("productsGrid").innerHTML = `<div class="space-y-3">${filtered.map(productCard).join("")}</div>`;
+    $("productsGrid").innerHTML = `<div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">${filtered.map(productCard).join("")}</div>`;
   }
 }
 
